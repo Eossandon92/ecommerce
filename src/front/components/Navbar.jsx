@@ -32,7 +32,7 @@ export const Navbar = () => {
                 <div className="container">
                     <Link to="/" className="navbar-brand navbar-brand-custom">
                         <i className="fas fa-shapes me-2"></i>
-                        <span>Pequeños Exploradores</span>
+                        <span>Mi Pequeño Espacio</span>
                     </Link>
                     
                     <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">

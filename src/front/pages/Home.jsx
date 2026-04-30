@@ -114,7 +114,7 @@ export const Home = () => {
                             <span className="about-tag">Nuestro Objetivo</span>
                             <h2 className="about-title">Más que una tienda, somos un aliado en su desarrollo</h2>
                             <p className="about-text">
-                                En <strong>Pequeños Exploradores</strong>, creemos que el juego es la herramienta más poderosa para el aprendizaje. Nuestra misión es seleccionar cuidadosamente juguetes y accesorios que fomenten la curiosidad, la creatividad y el bienestar de los niños. 
+                                En <strong>Mi Pequeño Espacio</strong>, creemos que el juego es la herramienta más poderosa para el aprendizaje. Nuestra misión es seleccionar cuidadosamente juguetes y accesorios que fomenten la curiosidad, la creatividad y el bienestar de los niños. 
                             </p>
                             <p className="about-text">
                                 Trabajamos con marcas que comparten nuestros valores de seguridad, durabilidad y respeto por el medio ambiente, asegurando que cada producto que llega a tu hogar sea una inversión en el futuro de tus pequeños.
