@@ -15,6 +15,29 @@ function normalizarRut(valor) {
   return (valor || '').toString().toLowerCase().replace(/[.\-\s]/g, '');
 }
 
+function normalizarTexto(valor) {
+  return (valor || '')
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9\s]/g, '')
+    .trim();
+}
+
+// Busca el condominio que mejor matchea la pista que dio el usuario (ej. "Santa Rosa"),
+// por inclusión de texto en cualquier dirección. Devuelve null si no hay match claro.
+export function encontrarComunidad(comunidades, pista) {
+  const pistaNorm = normalizarTexto(pista);
+  if (!pistaNorm) return null;
+  return (
+    comunidades.find((c) => {
+      const nombreNorm = normalizarTexto(c.nombre);
+      return nombreNorm.includes(pistaNorm) || pistaNorm.includes(nombreNorm);
+    }) || null
+  );
+}
+
 function indiceMes(mes) {
   const idx = typeof mes === 'number' ? mes - 1 : MESES.findIndex((m) => m === mes.toLowerCase());
   if (idx < 0 || idx > 11) throw new Error(`Mes inválido: ${mes}`);
@@ -158,7 +181,7 @@ export async function descargarLiquidacion(page, { dataId, nombre }, { valorDesd
   return destino;
 }
 
-export async function obtenerLiquidacion({ consulta, mes, anio, headless = true, downloadDir }) {
+export async function obtenerLiquidacion({ consulta, mes, anio, condominio, headless = true, downloadDir }) {
   const etiqueta = etiquetaMes(mes, anio);
   const valor = valorMes(mes, anio);
   const browser = await chromium.launch({ headless });
@@ -168,7 +191,16 @@ export async function obtenerLiquidacion({ consulta, mes, anio, headless = true,
     await iniciarSesion(page);
     const comunidades = await obtenerComunidades(page);
 
-    for (const comunidad of comunidades) {
+    // Si el usuario indicó el condominio, lo probamos primero (ahorra tiempo);
+    // si no matchea ahí, igual caemos al resto como respaldo.
+    let ordenBusqueda = comunidades;
+    const pista = condominio ? encontrarComunidad(comunidades, condominio) : null;
+    if (pista) {
+      console.error(`Condominio indicado por el usuario matcheó: "${pista.nombre}" — probando ahí primero.`);
+      ordenBusqueda = [pista, ...comunidades.filter((c) => c.slug !== pista.slug)];
+    }
+
+    for (const comunidad of ordenBusqueda) {
       console.error(`Revisando "${comunidad.nombre}"...`);
       let encontrado;
       try {

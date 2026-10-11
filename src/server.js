@@ -31,12 +31,12 @@ app.post('/liquidacion', (req, res) => {
     return res.status(401).json({ error: 'No autorizado' });
   }
 
-  const { consulta, mes, anio } = req.body || {};
+  const { consulta, mes, anio, condominio } = req.body || {};
   if (!consulta || !mes || !anio) {
     return res.status(400).json({ error: 'Faltan campos: consulta, mes, anio' });
   }
 
-  encolar(() => obtenerLiquidacion({ consulta, mes, anio, headless: true }))
+  encolar(() => obtenerLiquidacion({ consulta, mes, anio, condominio, headless: true }))
     .then((resultado) => {
       res.setHeader('X-Trabajador', encodeURIComponent(resultado.nombre));
       res.setHeader('X-Comunidad', encodeURIComponent(resultado.comunidad));
