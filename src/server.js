@@ -26,6 +26,44 @@ app.get('/health', (req, res) => {
   res.json({ ok: true });
 });
 
+// Estado conversacional simple (en memoria) para el flujo de "¿en qué condominio
+// trabaja?" — se pierde si el servicio se reinicia/duerme, lo cual está bien:
+// peor caso, vuelve a preguntar. Expira solo para no quedar pegado si alguien
+// no responde nunca.
+const pendientes = new Map();
+const TTL_PENDIENTE_MS = 10 * 60 * 1000;
+
+function requiereAuth(req, res) {
+  if (req.get('X-API-Key') !== API_SECRET) {
+    res.status(401).json({ error: 'No autorizado' });
+    return false;
+  }
+  return true;
+}
+
+app.get('/estado/:chatId', (req, res) => {
+  if (!requiereAuth(req, res)) return;
+  const p = pendientes.get(req.params.chatId);
+  if (p && p.expira > Date.now()) {
+    return res.json({ pendiente: true, datos: p });
+  }
+  pendientes.delete(req.params.chatId);
+  res.json({ pendiente: false });
+});
+
+app.post('/estado/:chatId', (req, res) => {
+  if (!requiereAuth(req, res)) return;
+  const { nombre, mes, anio } = req.body || {};
+  pendientes.set(req.params.chatId, { nombre, mes, anio, expira: Date.now() + TTL_PENDIENTE_MS });
+  res.json({ ok: true });
+});
+
+app.delete('/estado/:chatId', (req, res) => {
+  if (!requiereAuth(req, res)) return;
+  pendientes.delete(req.params.chatId);
+  res.json({ ok: true });
+});
+
 app.post('/liquidacion', (req, res) => {
   if (req.get('X-API-Key') !== API_SECRET) {
     return res.status(401).json({ error: 'No autorizado' });
