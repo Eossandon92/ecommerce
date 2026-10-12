@@ -128,12 +128,21 @@ export async function buscarTrabajadorEnCondominio(page, slug, consulta, valorMe
   await seleccionarMesEnFiltro(page, valorMesStr);
 
   const consultaNorm = normalizarRut(consulta);
-  const consultaTexto = consulta.toString().toLowerCase();
+  const palabrasConsulta = normalizarTexto(consulta).split(/\s+/).filter(Boolean);
 
   return page.evaluate(
-    ({ consultaNorm, consultaTexto }) => {
+    ({ consultaNorm, palabrasConsulta }) => {
       function normalizar(valor) {
         return (valor || '').toString().toLowerCase().replace(/[.\-\s]/g, '');
+      }
+      function normalizarTexto(valor) {
+        return (valor || '')
+          .toString()
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[̀-ͯ]/g, '')
+          .replace(/[^a-z0-9\s]/g, '')
+          .trim();
       }
       const filas = Array.from(document.querySelectorAll('table tbody tr'));
       for (const fila of filas) {
@@ -144,13 +153,18 @@ export async function buscarTrabajadorEnCondominio(page, slug, consulta, valorMe
         const btn = fila.querySelector('.tools-menu-btn');
         if (!btn) continue;
         const dataId = btn.getAttribute('data-id');
-        if (normalizar(rut) === consultaNorm || nombre.toLowerCase().includes(consultaTexto)) {
+        const nombreNorm = normalizarTexto(nombre);
+        // Coincide si vino el RUT exacto, o si todas las palabras de la consulta
+        // aparecen en el nombre (sin importar orden ni nombres del medio).
+        const coincideNombre =
+          palabrasConsulta.length > 0 && palabrasConsulta.every((p) => nombreNorm.includes(p));
+        if (normalizar(rut) === consultaNorm || coincideNombre) {
           return { dataId, nombre, rut };
         }
       }
       return null;
     },
-    { consultaNorm, consultaTexto },
+    { consultaNorm, palabrasConsulta },
   );
 }
 
