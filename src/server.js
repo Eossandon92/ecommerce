@@ -53,8 +53,8 @@ app.get('/estado/:chatId', (req, res) => {
 
 app.post('/estado/:chatId', (req, res) => {
   if (!requiereAuth(req, res)) return;
-  const { nombre, mes, anio } = req.body || {};
-  pendientes.set(req.params.chatId, { nombre, mes, anio, expira: Date.now() + TTL_PENDIENTE_MS });
+  const { nombre, mes, anio, condominio, condominioPreguntado } = req.body || {};
+  pendientes.set(req.params.chatId, { nombre, mes, anio, condominio, condominioPreguntado, expira: Date.now() + TTL_PENDIENTE_MS });
   res.json({ ok: true });
 });
 
