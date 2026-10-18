@@ -205,13 +205,18 @@ export async function obtenerLiquidacion({ consulta, mes, anio, condominio, head
     await iniciarSesion(page);
     const comunidades = await obtenerComunidades(page);
 
-    // Si el usuario indicó el condominio, lo probamos primero (ahorra tiempo);
-    // si no matchea ahí, igual caemos al resto como respaldo.
+    // Si el usuario indicó el condominio, lo probamos primero (ahorra tiempo).
+    // Importante: NO se excluye del resto de la lista — si ese primer intento
+    // falla por algo transitorio (timeout de red, Kastor lento), el loop de
+    // abajo lo vuelve a intentar en su posición normal en vez de perderlo para
+    // siempre (bug real visto en prod: el hint matcheaba la comunidad correcta,
+    // un timeout la tiraba, y como estaba excluida del resto nunca se
+    // reintentaba, dando 404 pese a que la persona sí trabajaba ahí).
     let ordenBusqueda = comunidades;
     const pista = condominio ? encontrarComunidad(comunidades, condominio) : null;
     if (pista) {
       console.error(`Condominio indicado por el usuario matcheó: "${pista.nombre}" — probando ahí primero.`);
-      ordenBusqueda = [pista, ...comunidades.filter((c) => c.slug !== pista.slug)];
+      ordenBusqueda = [pista, ...comunidades];
     }
 
     for (const comunidad of ordenBusqueda) {
