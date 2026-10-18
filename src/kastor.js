@@ -199,7 +199,12 @@ export async function obtenerLiquidacion({ consulta, mes, anio, condominio, head
   const etiqueta = etiquetaMes(mes, anio);
   const valor = valorMes(mes, anio);
   const browser = await chromium.launch({ headless });
-  const context = await browser.newContext({ acceptDownloads: true });
+  // Viewport alto a propósito: el menú de "Descargar" de una fila se despliega
+  // relativo a su posición en la tabla, y con el viewport chico por defecto
+  // (1280x720) una fila más abajo en una comunidad con muchos trabajadores deja
+  // el menú fuera del viewport — Playwright scrollea la página pero el menú no
+  // se mueve con ella, y el click termina en timeout (visto en prod).
+  const context = await browser.newContext({ acceptDownloads: true, viewport: { width: 1280, height: 2200 } });
   const page = await context.newPage();
   try {
     await iniciarSesion(page);
