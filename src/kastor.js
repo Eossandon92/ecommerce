@@ -3,7 +3,7 @@ import 'dotenv/config';
 import path from 'node:path';
 import fs from 'node:fs';
 
-const BASE_URL = 'https://gestionpro.kastor.cl';
+export const BASE_URL = 'https://gestionpro.kastor.cl';
 const DOWNLOAD_DIR_DEFAULT = process.env.DOWNLOAD_DIR || './downloads';
 
 const MESES = [
@@ -15,7 +15,7 @@ function normalizarRut(valor) {
   return (valor || '').toString().toLowerCase().replace(/[.\-\s]/g, '');
 }
 
-function normalizarTexto(valor) {
+export function normalizarTexto(valor) {
   return (valor || '')
     .toString()
     .toLowerCase()
@@ -89,7 +89,7 @@ export async function obtenerComunidades(page) {
 
 const DASHBOARD_URL = `${BASE_URL}/login/dashboard/index`;
 
-async function entrarAComunidad(page, slug) {
+export async function entrarAComunidad(page, slug) {
   // Ir directo por URL a una comunidad sin pasar antes por el botón "Acceder" real
   // redirige a logout: el click dispara algo (AJAX/handshake) que fija el contexto
   // de la comunidad en la sesión del servidor, y un goto frío no lo replica.
