@@ -25,17 +25,59 @@ export function normalizarTexto(valor) {
     .trim();
 }
 
-// Busca el condominio que mejor matchea la pista que dio el usuario (ej. "Santa Rosa"),
-// por inclusión de texto en cualquier dirección. Devuelve null si no hay match claro.
+// Palabras que no ayudan a distinguir un condominio de otro.
+const PALABRAS_GENERICAS = new Set(['condominio', 'edificio', 'comunidad', 'de', 'del', 'la', 'el', 'los', 'las']);
+
+// Distancia de edición (Levenshtein) entre dos palabras, para tolerar errores
+// de tipeo como "capikla" → "capilla" o "huchuraba" → "huechuraba".
+function distancia(a, b) {
+  const fila = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    let diagonal = fila[0];
+    fila[0] = i;
+    for (let j = 1; j <= b.length; j++) {
+      const arriba = fila[j];
+      fila[j] = Math.min(fila[j] + 1, fila[j - 1] + 1, diagonal + (a[i - 1] === b[j - 1] ? 0 : 1));
+      diagonal = arriba;
+    }
+  }
+  return fila[b.length];
+}
+
+function palabrasClave(texto) {
+  return normalizarTexto(texto).split(/\s+/).filter((p) => p && !PALABRAS_GENERICAS.has(p));
+}
+
+// Busca el condominio que mejor matchea la pista que dio el usuario (ej. "Santa Rosa").
+// Primero por inclusión de texto en cualquier dirección; si no, por palabras
+// parecidas (tolera 1 error de tipeo en palabras de hasta 6 letras y 2 en las
+// más largas). Devuelve null si no hay match claro.
 export function encontrarComunidad(comunidades, pista) {
   const pistaNorm = normalizarTexto(pista);
-  if (!pistaNorm) return null;
-  return (
-    comunidades.find((c) => {
-      const nombreNorm = normalizarTexto(c.nombre);
-      return nombreNorm.includes(pistaNorm) || pistaNorm.includes(nombreNorm);
-    }) || null
-  );
+  // "condominio" o "el edificio" solos no dicen cuál es.
+  if (!pistaNorm || !palabrasClave(pista).length) return null;
+  const exacta = comunidades.find((c) => {
+    const nombreNorm = normalizarTexto(c.nombre);
+    return nombreNorm.includes(pistaNorm) || pistaNorm.includes(nombreNorm);
+  });
+  if (exacta) return exacta;
+
+  const palabrasPista = palabrasClave(pista);
+  if (!palabrasPista.length) return null;
+  let mejor = null;
+  let mejorPuntaje = 0;
+  for (const c of comunidades) {
+    const palabrasNombre = palabrasClave(c.nombre);
+    const puntaje = palabrasPista.filter((p) =>
+      palabrasNombre.some((n) => distancia(p, n) <= (Math.max(p.length, n.length) > 6 ? 2 : 1)),
+    ).length;
+    if (puntaje > mejorPuntaje) {
+      mejor = c;
+      mejorPuntaje = puntaje;
+    }
+  }
+  // Al menos la mitad de las palabras de la pista tienen que calzar.
+  return mejor && mejorPuntaje * 2 >= palabrasPista.length ? mejor : null;
 }
 
 function indiceMes(mes) {

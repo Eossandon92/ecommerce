@@ -52,6 +52,7 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
     const nombreArchivo = `Liquidacion_${resultado.nombre}_${combinado.mes}_${combinado.anio}.pdf`.replace(/\s+/g, '_');
     await chat.enviarDocumento(resultado.archivo, nombreArchivo);
     await chat.reaccionar('👌');
+    await chat.celebrar();
   } finally {
     fs.unlink(resultado.archivo, () => {});
   }

@@ -88,4 +88,5 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
     }
   }
   await chat.reaccionar('👌');
+  await chat.celebrar();
 }
