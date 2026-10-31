@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import { encolar } from '../../cola.js';
 import { obtenerVacaciones } from '../../vacaciones.js';
 import { CANCELAR, NO_SE, esBoton, condominioDeBoton, preguntarFaltantes, numeroCL } from '../comun.js';
@@ -37,7 +38,7 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
   let r;
   try {
     r = await chat.conEspera(`Buscando las vacaciones de ${combinado.nombre}`, () =>
-      encolar(() => obtenerVacaciones({ consulta: combinado.nombre, condominio: combinado.condominio })),
+      encolar(() => obtenerVacaciones({ consulta: combinado.nombre, condominio: combinado.condominio, conComprobante: true })),
     );
   } catch (err) {
     if (err.coincidencias) {
@@ -67,7 +68,24 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
   if (r.fechaInicioContrato) lineas.push(`Inicio de contrato: ${r.fechaInicioContrato}`);
   const ultima = (r.historial || [])[0];
   if (ultima) lineas.push(`Últimas vacaciones: ${ultima.desde} al ${ultima.hasta} (${numeroCL(ultima.habiles)} días hábiles)`);
+  else lineas.push('No tiene vacaciones registradas en Kastor, así que no hay comprobante para adjuntar.');
 
   await chat.enviar(lineas.join('\n'));
+
+  // Comprobante de las últimas vacaciones (el PDF del ícono de impresora en Kastor).
+  if (r.archivoComprobante) {
+    try {
+      const ult = r.historial[0];
+      await chat.enviarDocumento(
+        r.archivoComprobante,
+        r.nombreComprobante,
+        `📎 Te adjunto el último comprobante de vacaciones disponible (${ult.desde} al ${ult.hasta}).`,
+      );
+    } catch (err) {
+      await chat.enviar(`No pude enviar el comprobante: ${err.message}`);
+    } finally {
+      fs.unlink(r.archivoComprobante, () => {});
+    }
+  }
   await chat.reaccionar('👌');
 }

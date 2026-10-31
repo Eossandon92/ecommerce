@@ -1,5 +1,7 @@
 import { chromium } from 'playwright';
 import 'dotenv/config';
+import fs from 'node:fs';
+import path from 'node:path';
 import {
   BASE_URL,
   iniciarSesion,
@@ -13,7 +15,9 @@ import {
 // Remuneraciones → Vacaciones al abrirla y al elegir un trabajador:
 //   POST /{slug}/remuneraciones/vacaciones          parametro=YYYY-MM
 //   POST /{slug}/remuneraciones/detalle_vacaciones  sueldo_total_id=<id>&fecha_barra=YYYY-MM
-// Nunca toca add_vacaciones (Guardar), descontar ni agregar días.
+// Nunca toca add_vacaciones (Guardar), descontar ni agregar días, ni
+// elimina_vacas (la ✖ roja). El comprobante es el mismo GET del ícono de
+// impresora ("Ver Comprobante"): remuneraciones/pdf_comp_vacaciones/<trabajador>/<vacación>.
 
 // La pestaña solo muestra la lista de trabajadores en un mes abierto; en uno
 // cerrado responde "ya ha sido cerrado". Se prueba desde el mes actual hacia
@@ -91,6 +95,7 @@ function parsearDetalle(html) {
           progresivos: numero(celdas[3]),
           totalDias: numero(celdas[7]),
           forma: celdas[8],
+          comprobante: (tr[1].match(/href="([^"]*pdf_comp_vacaciones[^"]*)"/) || [])[1] || null,
         });
       }
     }
@@ -112,7 +117,25 @@ function parsearDetalle(html) {
   };
 }
 
-export async function obtenerVacaciones({ consulta, condominio, headless = true }) {
+// Descarga el comprobante (PDF) de unas vacaciones del historial, con la
+// misma sesión. Devuelve la ruta local del archivo.
+async function descargarComprobante(page, slug, href, nombreArchivo) {
+  const url = href.startsWith('http') ? href : `${BASE_URL}/${slug}/remuneraciones/${href.replace(/^\/?/, '')}`;
+  const res = await page.request.get(url);
+  const cuerpo = await res.body();
+  if (!res.ok() || cuerpo.subarray(0, 4).toString() !== '%PDF') {
+    throw new Error(`Kastor no devolvió un PDF (${res.status()})`);
+  }
+  const dir = process.env.DOWNLOAD_DIR || './downloads';
+  fs.mkdirSync(dir, { recursive: true });
+  const destino = path.join(dir, nombreArchivo);
+  fs.writeFileSync(destino, cuerpo);
+  return destino;
+}
+
+// conComprobante: además descarga el PDF de las últimas vacaciones (si hay)
+// y lo devuelve en archivoComprobante; quien llama debe borrar el archivo.
+export async function obtenerVacaciones({ consulta, condominio, headless = true, conComprobante = false }) {
   const browser = await chromium.launch({ headless });
   const page = await (await browser.newContext()).newPage();
   try {
@@ -158,7 +181,19 @@ export async function obtenerVacaciones({ consulta, condominio, headless = true 
         if (detalle.habilesDisponibles === null) {
           throw new Error(`Encontré a ${trabajador.nombre} en ${comunidad.nombre}, pero Kastor no devolvió sus días de vacaciones.`);
         }
-        return { nombre: trabajador.nombre, comunidad: comunidad.nombre, slug: comunidad.slug, ...detalle };
+        const resultado = { nombre: trabajador.nombre, comunidad: comunidad.nombre, slug: comunidad.slug, ...detalle };
+        const ultima = detalle.historial[0];
+        if (conComprobante && ultima && ultima.comprobante) {
+          const primerNombre = trabajador.nombre.split(/\s+/).slice(0, 2).join('_');
+          resultado.nombreComprobante = `Comprobante_vacaciones_${primerNombre}_${ultima.desde}.pdf`;
+          try {
+            resultado.archivoComprobante = await descargarComprobante(page, comunidad.slug, ultima.comprobante, resultado.nombreComprobante);
+          } catch (err) {
+            // Sin comprobante igual se responden los días.
+            console.warn(`Aviso: no se pudo descargar el comprobante de ${trabajador.nombre}: ${err.message}`);
+          }
+        }
+        return resultado;
       }
     }
     throw new Error(`No se encontró a "${consulta}" en ninguno de los ${revisados.size} condominios revisados.`);
