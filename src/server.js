@@ -113,7 +113,12 @@ app.post('/vacaciones', (req, res) => {
 
   encolar(() => obtenerVacaciones({ consulta, condominio, headless: true }))
     .then((resultado) => res.json(resultado))
-    .catch((err) => res.status(404).json({ error: err.message }));
+    .catch((err) => {
+      if (err.coincidencias) {
+        return res.status(409).json({ error: err.message, coincidencias: err.coincidencias, comunidad: err.comunidad });
+      }
+      res.status(404).json({ error: err.message });
+    });
 });
 
 // --- Gasto común ---------------------------------------------------------

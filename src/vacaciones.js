@@ -143,7 +143,11 @@ export async function obtenerVacaciones({ consulta, condominio, headless = true 
       const coincidencias = buscarTrabajador(lista.trabajadores, consulta);
       if (coincidencias.length > 1) {
         const nombres = coincidencias.map((t) => t.nombre).join(', ');
-        throw new Error(`En ${comunidad.nombre} hay ${coincidencias.length} personas que calzan con "${consulta}": ${nombres}. Indica el nombre más completo.`);
+        const err = new Error(`En ${comunidad.nombre} hay ${coincidencias.length} personas que calzan con "${consulta}": ${nombres}. Indica el nombre más completo.`);
+        // Para que el bot ofrezca un botón por persona.
+        err.coincidencias = coincidencias.map((t) => t.nombre);
+        err.comunidad = comunidad.nombre;
+        throw err;
       }
       if (coincidencias.length === 1) {
         const trabajador = coincidencias[0];
