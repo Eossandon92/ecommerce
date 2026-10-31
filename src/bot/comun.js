@@ -38,6 +38,6 @@ export async function preguntarFaltantes(chat, partes, faltaCondominio) {
 export const numeroCL = (v) =>
   v === null || v === undefined ? '-' : Number(v).toLocaleString('es-CL', { maximumFractionDigits: 2 });
 
-// Cierre de una solicitud completada: va al final del mismo mensaje (en
-// Telegram los emojis nuevos se ven animados dentro del texto).
-export const LISTO = '✔️';
+// Cierre de una solicitud completada: va al final del mismo mensaje, en tamaño
+// normal (no animado: los emojis animados en el texto son de Premium).
+export const LISTO = '✅';
