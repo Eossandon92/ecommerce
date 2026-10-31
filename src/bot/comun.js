@@ -17,8 +17,7 @@ export const CONDOMINIOS = [
 export const NO_SE = 'No sé';
 export const CANCELAR = 'Cancelar';
 
-export const AYUDA =
-  'Puedo enviarte una liquidación de sueldo o decirte los días de vacaciones disponibles de un trabajador.';
+export const AYUDA = 'Escribe "menú" para ver todo lo que puedo hacer.';
 
 export const normalizar = (v) =>
   (v || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
@@ -41,3 +40,79 @@ export const numeroCL = (v) =>
 // Cierre de una solicitud completada: va al final del mismo mensaje, en tamaño
 // normal (no animado: los emojis animados en el texto son de Premium).
 export const LISTO = '✅';
+
+// $ 1.358.906 (negativos con signo).
+export const pesos = (v) =>
+  v === null || v === undefined ? '-' : `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString('es-CL')}`;
+
+// Kastor muestra ". ." o "----" cuando no hay nombre registrado.
+export const nombreOVacio = (v) => (!v || /^[-\s.]*$/.test(v) ? null : v);
+
+// Junta lo que pidió la persona entre mensajes (Claude, botones y lo que se
+// estaba preguntando) y pregunta lo que falte. Devuelve los datos completos,
+// o null si tuvo que preguntar algo (el estado queda guardado).
+//   campos: 'condominio' (obligatorio, con botones) y/o 'unidad'.
+export async function juntarDatos({ chat, datos, previo, texto, guardar }, campos, extra = {}) {
+  const p = previo || {};
+  const combinado = { ...p, ...extra };
+  if (campos.includes('condominio')) {
+    combinado.condominio = condominioDeBoton(texto) || datos.condominio || p.condominio || '';
+  }
+  if (campos.includes('unidad')) {
+    // Si se estaba preguntando la unidad, la respuesta suelta ("304") vale tal cual.
+    combinado.unidad = datos.unidad || (p.esperando === 'unidad' ? texto : '') || p.unidad || '';
+  }
+
+  if (campos.includes('condominio') && !combinado.condominio) {
+    guardar({ ...combinado, esperando: 'condominio' });
+    await chat.enviar('¿De qué condominio?', CONDOMINIOS);
+    await chat.reaccionar(null);
+    return null;
+  }
+  if (campos.includes('unidad') && !combinado.unidad) {
+    guardar({ ...combinado, esperando: 'unidad' });
+    await chat.enviar('¿Qué unidad? (ej: 304, casa 11, bodega 38)');
+    await chat.reaccionar(null);
+    return null;
+  }
+  delete combinado.esperando;
+  return combinado;
+}
+
+// ---------- Menú ----------
+export const BOTON_MENU = '⬅️ Menú';
+export const MENU_PRINCIPAL = ['💰 Cobranza', '🏦 Fondos del condominio', '👷 Trabajadores'];
+export const SUBMENUS = {
+  '💰 Cobranza': ['Ver morosos', 'Deuda de una unidad', 'Pagos recibidos', 'Datos de una unidad', BOTON_MENU],
+  '👷 Trabajadores': ['Trabajadores vigentes', 'Vacaciones de un trabajador', 'Liquidación de sueldo', BOTON_MENU],
+};
+// Botones que inician una consulta directamente (sin pasar por Claude).
+export const BOTONES_ACCION = {
+  'Ver morosos': 'morosos',
+  'Deuda de una unidad': 'deuda_unidad',
+  'Pagos recibidos': 'pagos',
+  'Datos de una unidad': 'datos_unidad',
+  '🏦 Fondos del condominio': 'fondos',
+  'Trabajadores vigentes': 'trabajadores',
+  'Vacaciones de un trabajador': 'vacaciones',
+  'Liquidación de sueldo': 'liquidacion',
+};
+
+export const TEXTO_MENU = [
+  '👋 ¡Hola! Soy el asistente de GestionPro. Esto es lo que puedo hacer por ti:',
+  '',
+  '💰 Cobranza',
+  '• Morosos de un condominio',
+  '• Deuda y último pago de una unidad',
+  '• Pagos recibidos (hoy, esta semana o un mes)',
+  '• Responsable y contacto de una unidad',
+  '',
+  '🏦 Fondos y saldos del condominio',
+  '',
+  '👷 Trabajadores',
+  '• Trabajadores vigentes',
+  '• Vacaciones disponibles y último comprobante',
+  '• Liquidación de sueldo en PDF',
+  '',
+  'Escríbeme lo que necesitas, por ejemplo "morosos de Santa Rosa" o "¿cuánto debe el 304 de Santa Rosa?", o toca un botón 👇',
+].join('\n');
