@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { encolar } from '../../cola.js';
 import { obtenerVacaciones } from '../../vacaciones.js';
-import { CANCELAR, NO_SE, esBoton, condominioDeBoton, preguntarFaltantes, numeroCL } from '../comun.js';
+import { CANCELAR, NO_SE, LISTO, esBoton, condominioDeBoton, preguntarFaltantes, numeroCL } from '../comun.js';
 
 // Días de vacaciones disponibles de un trabajador (solo lectura en Kastor).
 export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
@@ -70,6 +70,8 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
   if (ultima) lineas.push(`Últimas vacaciones: ${ultima.desde} al ${ultima.hasta} (${numeroCL(ultima.habiles)} días hábiles)`);
   else lineas.push('No tiene vacaciones registradas en Kastor, así que no hay comprobante para adjuntar.');
 
+  // El ✔️ va en el último mensaje: el texto del comprobante si hay PDF, si no este.
+  if (!r.archivoComprobante) lineas.push('', LISTO);
   await chat.enviar(lineas.join('\n'));
 
   // Comprobante de las últimas vacaciones (el PDF del ícono de impresora en Kastor).
@@ -79,7 +81,7 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
       await chat.enviarDocumento(
         r.archivoComprobante,
         r.nombreComprobante,
-        `📎 Te adjunto el último comprobante de vacaciones disponible (${ult.desde} al ${ult.hasta}).`,
+        `📎 Te adjunto el último comprobante de vacaciones disponible (${ult.desde} al ${ult.hasta}). ${LISTO}`,
       );
     } catch (err) {
       await chat.enviar(`No pude enviar el comprobante: ${err.message}`);
@@ -88,5 +90,4 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
     }
   }
   await chat.reaccionar('👌');
-  await chat.celebrar();
 }

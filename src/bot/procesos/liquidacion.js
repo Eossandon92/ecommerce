@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { encolar } from '../../cola.js';
 import { obtenerLiquidacion } from '../../kastor.js';
-import { NO_SE, esBoton, condominioDeBoton, preguntarFaltantes } from '../comun.js';
+import { NO_SE, LISTO, esBoton, condominioDeBoton, preguntarFaltantes } from '../comun.js';
 
 // Liquidación de sueldo de un trabajador (PDF desde Kastor).
 export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
@@ -50,9 +50,8 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
 
   try {
     const nombreArchivo = `Liquidacion_${resultado.nombre}_${combinado.mes}_${combinado.anio}.pdf`.replace(/\s+/g, '_');
-    await chat.enviarDocumento(resultado.archivo, nombreArchivo);
+    await chat.enviarDocumento(resultado.archivo, nombreArchivo, `Liquidación de ${resultado.nombre} · ${combinado.mes} ${combinado.anio} ${LISTO}`);
     await chat.reaccionar('👌');
-    await chat.celebrar();
   } finally {
     fs.unlink(resultado.archivo, () => {});
   }

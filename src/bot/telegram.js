@@ -83,11 +83,5 @@ export function crearChat({ chatId, messageId }) {
     return json;
   }
 
-  // Un emoji solo en un mensaje Telegram lo muestra grande y animado; se usa
-  // para cerrar una solicitud completada.
-  async function celebrar() {
-    await telegram('sendMessage', { chat_id: chatId, text: '✅' }).catch(() => {});
-  }
-
-  return { chatId, enviar, reaccionar, conEspera, enviarDocumento, celebrar };
+  return { chatId, enviar, reaccionar, conEspera, enviarDocumento };
 }
