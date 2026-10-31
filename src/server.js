@@ -6,6 +6,9 @@ import crypto from 'node:crypto';
 import { obtenerLiquidacion } from './kastor.js';
 import { obtenerGastoComun } from './gastoComun.js';
 import { obtenerVacaciones } from './vacaciones.js';
+import { encolar } from './cola.js';
+import { leerEstado, guardarEstado, borrarEstado } from './bot/estado.js';
+import { recibirMensaje, interpretarClaude } from './bot/index.js';
 
 const app = express();
 // Render pone un proxy delante: sin esto req.protocol sale "http" y las URLs
@@ -20,25 +23,9 @@ if (!API_SECRET) {
   throw new Error('Falta API_SECRET en las variables de entorno.');
 }
 
-// Solo un scraping a la vez: el RAM del free tier no alcanza para dos
-// Chromium en paralelo, así que las requests se encolan.
-let colaActual = Promise.resolve();
-function encolar(tarea) {
-  const resultado = colaActual.then(tarea, tarea);
-  colaActual = resultado.catch(() => {});
-  return resultado;
-}
-
 app.get('/health', (req, res) => {
   res.json({ ok: true });
 });
-
-// Estado conversacional simple (en memoria) para el flujo de "¿en qué condominio
-// trabaja?" — se pierde si el servicio se reinicia/duerme, lo cual está bien:
-// peor caso, vuelve a preguntar. Expira solo para no quedar pegado si alguien
-// no responde nunca.
-const pendientes = new Map();
-const TTL_PENDIENTE_MS = 10 * 60 * 1000;
 
 function requiereAuth(req, res) {
   if (req.get('X-API-Key') !== API_SECRET) {
@@ -48,29 +35,43 @@ function requiereAuth(req, res) {
   return true;
 }
 
+// --- Bot de Telegram ----------------------------------------------------
+// Activepieces recibe el mensaje de Telegram, lo pasa por Claude y manda aquí
+// todo junto. Se responde al tiro (202) y el bot contesta en Telegram por su
+// cuenta, así Activepieces no queda esperando las búsquedas largas en Kastor.
+app.post('/bot/mensaje', (req, res) => {
+  if (!requiereAuth(req, res)) return;
+  const { chatId, messageId, texto, respuesta } = req.body || {};
+  if (!chatId || respuesta === undefined) {
+    return res.status(400).json({ error: 'Faltan campos: chatId, respuesta' });
+  }
+  let datos;
+  try {
+    datos = interpretarClaude(respuesta);
+  } catch (err) {
+    return res.status(400).json({ error: `La respuesta de Claude no es JSON válido: ${err.message}` });
+  }
+  recibirMensaje({ chatId, messageId, texto, datos });
+  res.status(202).json({ ok: true });
+});
+
+// Rutas del flujo anterior (el paso Código de Activepieces guardaba el estado
+// acá). Se mantienen mientras ese código siga publicado.
 app.get('/estado/:chatId', (req, res) => {
   if (!requiereAuth(req, res)) return;
-  const p = pendientes.get(req.params.chatId);
-  if (p && p.expira > Date.now()) {
-    return res.json({ pendiente: true, datos: p });
-  }
-  pendientes.delete(req.params.chatId);
-  res.json({ pendiente: false });
+  const datos = leerEstado(req.params.chatId);
+  res.json(datos ? { pendiente: true, datos } : { pendiente: false });
 });
 
 app.post('/estado/:chatId', (req, res) => {
   if (!requiereAuth(req, res)) return;
-  // Se guarda lo que mande el step de Código (liquidación: nombre/mes/anio/
-  // condominio...; gasto común: unidad, archivoUrl, destinatario, esperando
-  // confirmación...), así no hay que tocar el servidor por cada campo nuevo.
-  const { expira, ...datos } = req.body || {};
-  pendientes.set(req.params.chatId, { ...datos, expira: Date.now() + TTL_PENDIENTE_MS });
+  guardarEstado(req.params.chatId, req.body || {});
   res.json({ ok: true });
 });
 
 app.delete('/estado/:chatId', (req, res) => {
   if (!requiereAuth(req, res)) return;
-  pendientes.delete(req.params.chatId);
+  borrarEstado(req.params.chatId);
   res.json({ ok: true });
 });
 
