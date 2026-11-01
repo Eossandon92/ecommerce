@@ -1,5 +1,4 @@
 import 'dotenv/config';
-import { MENU_PRINCIPAL } from './comun.js';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -27,15 +26,15 @@ export async function telegram(metodo, cuerpo) {
 // Funciones de un chat en particular, para que los procesos no tengan que
 // andar pasando el chatId en cada llamada.
 export function crearChat({ chatId, messageId }) {
-  // Botones de respuesta rápida: al tocar uno se envía como mensaje normal,
-  // que es lo único que Activepieces recibe del bot.
+  // Con botones: teclado de respuestas rápidas (al tocar uno se envía como
+  // mensaje normal, que es lo único que Activepieces recibe del bot).
+  // Sin botones: cierra el teclado si había uno abierto.
   // Telegram corta en 4096 caracteres: los mensajes largos se parten por
   // líneas y los botones van en el último pedazo.
   async function enviar(texto, botones) {
-    // Siempre queda un teclado visible: los botones de la pregunta, o si no
-    // hay, los del menú principal (así el menú no se pierde nunca).
-    const teclado = botones && botones.length ? botones : MENU_PRINCIPAL;
-    const reply_markup = { keyboard: teclado.map((b) => [{ text: b }]), resize_keyboard: true, is_persistent: true };
+    const reply_markup = botones && botones.length
+      ? { keyboard: botones.map((b) => [{ text: b }]), one_time_keyboard: true, resize_keyboard: true }
+      : { remove_keyboard: true };
     const partes = [];
     let actual = '';
     for (const linea of texto.split('\n')) {
