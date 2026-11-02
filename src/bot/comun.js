@@ -1,4 +1,5 @@
 // Utilidades que comparten los procesos del bot.
+import { encontrarComunidad } from '../kastor.js';
 
 // Botones de condominio (mismos nombres que en Kastor). Si se agrega un
 // condominio nuevo en Kastor, agregarlo aquí también.
@@ -25,6 +26,26 @@ export const normalizar = (v) =>
 export const esBoton = (texto, boton) => normalizar(texto) === normalizar(boton);
 
 export const condominioDeBoton = (texto) => CONDOMINIOS.find((c) => esBoton(texto, c)) || '';
+
+// Nombre completo del condominio a partir de una parte o con errores de tipeo
+// ("de la capilla", "froilan", "capikla") — mismo criterio que la búsqueda en
+// Kastor. '' si no se parece a ninguno.
+export function condominioParecido(pista) {
+  const c = encontrarComunidad(CONDOMINIOS.map((nombre) => ({ nombre })), pista || '');
+  return c ? c.nombre : '';
+}
+
+// El condominio del mensaje: botón, lo que entendió Claude (completado al
+// nombre real si se parece a uno) o, si se le estaba preguntando, el texto
+// suelto que escribió ("froilan"). Si no, el que ya se tenía.
+export function condominioDelMensaje({ texto, datos, previo, preguntando }) {
+  const p = previo || {};
+  return condominioDeBoton(texto)
+    || (datos.condominio && (condominioParecido(datos.condominio) || datos.condominio))
+    || (preguntando && condominioParecido(texto))
+    || p.condominio
+    || '';
+}
 
 // "Claro, ¿me dices A, B y C?" — si falta el condominio, con sus botones.
 export async function preguntarFaltantes(chat, partes, faltaCondominio) {
@@ -56,7 +77,7 @@ export async function juntarDatos({ chat, datos, previo, texto, guardar }, campo
   const p = previo || {};
   const combinado = { ...p, ...extra };
   if (campos.includes('condominio')) {
-    combinado.condominio = condominioDeBoton(texto) || datos.condominio || p.condominio || '';
+    combinado.condominio = condominioDelMensaje({ texto, datos, previo: p, preguntando: p.esperando === 'condominio' });
   }
   if (campos.includes('unidad')) {
     // Si se estaba preguntando la unidad, la respuesta suelta ("304") vale tal cual.
@@ -64,8 +85,9 @@ export async function juntarDatos({ chat, datos, previo, texto, guardar }, campo
   }
 
   if (campos.includes('condominio') && !combinado.condominio) {
+    const noEncontrado = p.esperando === 'condominio' && texto;
     guardar({ ...combinado, esperando: 'condominio' });
-    await chat.enviar('¿De qué condominio?', CONDOMINIOS);
+    await chat.enviar(noEncontrado ? `No encontré "${texto}". ¿De qué condominio?` : '¿De qué condominio?', CONDOMINIOS);
     await chat.reaccionar(null);
     return null;
   }

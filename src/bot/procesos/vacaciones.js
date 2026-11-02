@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { encolar } from '../../cola.js';
 import { obtenerVacaciones } from '../../vacaciones.js';
-import { CANCELAR, NO_SE, LISTO, esBoton, condominioDeBoton, preguntarFaltantes, numeroCL } from '../comun.js';
+import { CANCELAR, NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes, numeroCL } from '../comun.js';
 
 // Días de vacaciones disponibles de un trabajador (solo lectura en Kastor).
 export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
@@ -17,7 +17,9 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
 
   const combinado = {
     nombre: eligioPersona || datos.nombre || p.nombre || '',
-    condominio: condominioDeBoton(texto) || datos.condominio || p.condominio || '',
+    // Texto suelto como condominio solo si ya se sabe el nombre (si no, "Pedro
+    // Soto" podría tomarse por "Pedro de Valdivia").
+    condominio: condominioDelMensaje({ texto, datos, previo: p, preguntando: p.condominioPreguntado && !!(p.nombre || datos.nombre) }),
   };
   const condominioYaPreguntado = !!p.condominioPreguntado || esBoton(texto, NO_SE);
   const faltaNombre = !combinado.nombre;
