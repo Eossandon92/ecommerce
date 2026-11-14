@@ -105,13 +105,14 @@ export async function juntarDatos({ chat, datos, previo, texto, guardar }, campo
 export const BOTON_MENU = '⬅️ Menú';
 export const MENU_PRINCIPAL = ['💰 Cobranza', '🏦 Fondos del condominio', '👷 Trabajadores'];
 export const SUBMENUS = {
-  '💰 Cobranza': ['Ver morosos', 'Deuda de una unidad', 'Pagos recibidos', 'Datos de una unidad', BOTON_MENU],
+  '💰 Cobranza': ['Ver morosos', 'Deuda de una unidad', 'Gasto común de una unidad', 'Pagos recibidos', 'Datos de una unidad', BOTON_MENU],
   '👷 Trabajadores': ['Trabajadores vigentes', 'Vacaciones de un trabajador', 'Liquidación de sueldo', BOTON_MENU],
 };
 // Botones que inician una consulta directamente (sin pasar por Claude).
 export const BOTONES_ACCION = {
   'Ver morosos': 'morosos',
   'Deuda de una unidad': 'deuda_unidad',
+  'Gasto común de una unidad': 'gasto_comun',
   'Pagos recibidos': 'pagos',
   'Datos de una unidad': 'datos_unidad',
   '🏦 Fondos del condominio': 'fondos',
@@ -126,6 +127,7 @@ export const TEXTO_MENU = [
   '💰 Cobranza',
   '• Morosos de un condominio',
   '• Deuda y último pago de una unidad',
+  '• Gasto común (nota de cobro) de una unidad en PDF',
   '• Pagos recibidos (hoy, esta semana o un mes)',
   '• Responsable y contacto de una unidad',
   '',
