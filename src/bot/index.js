@@ -91,6 +91,13 @@ async function atender({ chatId, messageId, texto, datos: datosClaude }) {
       // Si Claude no reconoce el tipo (respuesta suelta como "Santa Rosa" o un
       // botón), se sigue con lo que se estaba conversando.
       tipo = datos.tipo || (previo && previo.tipo) || '';
+      // "Cuánto debe / lo que debe / deuda" es la deuda de la unidad, no el PDF
+      // del gasto común (Claude a veces los confunde por la palabra "gasto común").
+      if (tipo === 'gasto_comun' && /\b(debe|deben|deuda|adeuda|pag[oó]|al d[ií]a)\b/i.test(texto || '')
+        && !/\b(boleta|nota de cobro|pdf|documento|env[ií]a|m[aá]nda)/i.test(texto || '')) {
+        tipo = 'deuda_unidad';
+        datos = { ...datos, tipo };
+      }
     }
     const proceso = PROCESOS[tipo];
     if (!proceso) {

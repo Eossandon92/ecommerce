@@ -14,22 +14,36 @@ export async function manejar(ctx) {
   );
 
   const propietario = nombreOVacio(r.propietario);
-  const lineas = [`🏠 Unidad ${r.unidad} · ${r.comunidad}`];
-  if (propietario) lineas.push(`Propietario: ${propietario}`);
-  lineas.push('');
-  lineas.push(r.deuda > 0 ? `💰 Deuda actual: ${pesos(r.deuda)}` : '✅ Está al día, sin deuda.');
-  if (r.ultimoPago) {
-    lineas.push(`Último pago: ${r.ultimoPago.fecha} · ${pesos(r.ultimoPago.pago)}${r.ultimoPago.detalle ? ` (${r.ultimoPago.detalle})` : ''}`);
-  } else {
-    lineas.push(`Sin pagos registrados en ${r.anio}.`);
+  const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  const mesDe = (fecha) => { const [, mm, aa] = fecha.split('-'); return `${MESES[Number(mm) - 1]} ${aa}`; };
+
+  // Qué meses componen la deuda: los cobros más recientes hasta completar el saldo.
+  const pendientes = [];
+  let resto = r.deuda || 0;
+  for (const m of [...r.movimientos].reverse()) {
+    if (resto <= 0) break;
+    if (!m.cobro) continue;
+    const monto = Math.min(m.cobro, resto);
+    pendientes.unshift({ mes: mesDe(m.fecha), monto, parcial: monto < m.cobro });
+    resto -= monto;
   }
-  const ultimos = r.movimientos.slice(-5).reverse();
-  if (ultimos.length) {
-    lineas.push('', 'Últimos movimientos:');
-    for (const m of ultimos) {
-      lineas.push(m.pago ? `• ${m.fecha} pago ${pesos(m.pago)}` : `• ${m.fecha} ${m.detalle || 'cobro'} ${pesos(m.cobro)}`);
+
+  const lineas = [];
+  if (r.deuda > 0) {
+    lineas.push(`La unidad ${r.unidad} de ${r.comunidad} debe ${pesos(r.deuda)} 💰`);
+    if (pendientes.length) {
+      lineas.push('', pendientes.length === 1 ? 'Corresponde a:' : `Son ${pendientes.length} meses:`);
+      for (const x of pendientes) lineas.push(`• ${x.mes[0].toUpperCase()}${x.mes.slice(1)}: ${pesos(x.monto)}${x.parcial ? ' (saldo pendiente)' : ''}`);
+      if (resto > 0) lineas.push(`• Deuda de años anteriores: ${pesos(resto)}`);
     }
+  } else {
+    lineas.push(`La unidad ${r.unidad} de ${r.comunidad} está al día, no debe nada ✅`);
   }
+  lineas.push('');
+  lineas.push(r.ultimoPago
+    ? `Su último pago fue el ${r.ultimoPago.fecha} por ${pesos(r.ultimoPago.pago)}${r.ultimoPago.detalle ? ` (${r.ultimoPago.detalle})` : ''}.`
+    : `No tiene pagos registrados en ${r.anio}.`);
+  if (propietario) lineas.push(`Propietario: ${propietario}`);
   lineas.push('', LISTO);
   await chat.enviar(lineas.join('\n'));
   await chat.reaccionar('👌');
