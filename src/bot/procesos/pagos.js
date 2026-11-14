@@ -39,7 +39,7 @@ export async function manejar(ctx) {
   );
 
   if (!r.pagos.length) {
-    await chat.enviar(`No hay pagos registrados en ${r.comunidad} para ${texto}. ${LISTO}`);
+    await chat.responder(`No hay pagos registrados en ${r.comunidad} para ${texto}. ${LISTO}`);
     await chat.reaccionar('👌');
     return;
   }
@@ -55,7 +55,7 @@ export async function manejar(ctx) {
     }),
   ];
   if (r.pagos.length > 12) lineas.push(`… y ${r.pagos.length - 12} más en la planilla.`);
-  await chat.enviar(lineas.join('\n'));
+  await chat.responder(lineas.join('\n'));
 
   await chat.enviarPlanilla(
     `Pagos_${r.comunidad.replace(/\s+/g, '_')}_${r.desde}_al_${r.hasta}.csv`,

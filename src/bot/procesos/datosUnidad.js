@@ -27,6 +27,6 @@ export async function manejar(ctx) {
   if (r.alicuota) lineas.push(`Alícuota: ${r.alicuota}`);
   if (r.fechaEntrega) lineas.push(`Fecha de entrega: ${r.fechaEntrega}`);
   lineas.push('', LISTO);
-  await chat.enviar(lineas.join('\n'));
+  await chat.responder(lineas.join('\n'));
   await chat.reaccionar('👌');
 }

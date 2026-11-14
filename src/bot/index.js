@@ -1,5 +1,6 @@
 import { crearChat } from './telegram.js';
 import { leerEstado, guardarEstado, borrarEstado } from './estado.js';
+import { iaDisponible, interpretar, redactar, charlar, anotar } from './ia.js';
 import { CANCELAR, esBoton, BOTON_MENU, MENU_PRINCIPAL, SUBMENUS, BOTONES_ACCION, TEXTO_MENU } from './comun.js';
 import * as vacaciones from './procesos/vacaciones.js';
 import * as liquidacion from './procesos/liquidacion.js';
@@ -51,6 +52,15 @@ export function recibirMensaje(mensaje) {
 async function atender({ chatId, messageId, texto, datos: datosClaude }) {
   let datos = datosClaude || {};
   const chat = crearChat({ chatId, messageId });
+  // Todo lo que manda el bot queda en la memoria de la conversación.
+  const enviarOriginal = chat.enviar;
+  chat.enviar = (t, botones) => {
+    anotar(chatId, 'assistant', t);
+    return enviarOriginal(t, botones);
+  };
+  // Respuesta final de una consulta: la IA la redacta en lenguaje natural a
+  // partir de los datos; si no hay IA (o falla) se manda el texto tal cual.
+  chat.responder = async (t, botones) => chat.enviar((await redactar(chatId, t)) || t, botones);
   await chat.reaccionar('👀');
 
   try {
@@ -88,6 +98,10 @@ async function atender({ chatId, messageId, texto, datos: datosClaude }) {
       previoUsable = null;
       borrarEstado(chatId);
     } else {
+      // La IA del servidor interpreta con el historial del chat ("¿y el 1012?").
+      // Si no está configurada o falla, se usa lo que mandó Activepieces.
+      const ia = iaDisponible() ? await interpretar(chatId, texto || '') : null;
+      if (ia && (ia.tipo || !datos.tipo)) datos = ia;
       // Si Claude no reconoce el tipo (respuesta suelta como "Santa Rosa" o un
       // botón), se sigue con lo que se estaba conversando.
       tipo = datos.tipo || (previo && previo.tipo) || '';
@@ -99,7 +113,16 @@ async function atender({ chatId, messageId, texto, datos: datosClaude }) {
         datos = { ...datos, tipo };
       }
     }
+    anotar(chatId, 'user', texto);
     const proceso = PROCESOS[tipo];
+    if (!proceso && iaDisponible()) {
+      const respuesta = await charlar(chatId);
+      if (respuesta) {
+        await chat.enviar(respuesta, MENU_PRINCIPAL);
+        await chat.reaccionar(null);
+        return;
+      }
+    }
     if (!proceso) {
       if (datos.respuesta && !previo) await chat.enviar(datos.respuesta);
       await mostrarMenu(chat);

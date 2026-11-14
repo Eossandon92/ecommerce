@@ -74,7 +74,7 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
 
   // El ✔️ va en el último mensaje: el texto del comprobante si hay PDF, si no este.
   if (!r.archivoComprobante) lineas.push('', LISTO);
-  await chat.enviar(lineas.join('\n'));
+  await chat.responder(lineas.join('\n'));
 
   // Comprobante de las últimas vacaciones (el PDF del ícono de impresora en Kastor).
   if (r.archivoComprobante) {

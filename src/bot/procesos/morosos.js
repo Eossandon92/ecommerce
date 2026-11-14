@@ -15,7 +15,7 @@ export async function manejar(ctx) {
 
   const desde = r.mesesMinimo > 1 ? ` con ${r.mesesMinimo} meses o más` : '';
   if (!r.morosos.length) {
-    await chat.enviar(`🎉 ${r.comunidad} no tiene unidades morosas${desde}. ${LISTO}`);
+    await chat.responder(`🎉 ${r.comunidad} no tiene unidades morosas${desde}. ${LISTO}`);
     await chat.reaccionar('👌');
     return;
   }
@@ -31,7 +31,7 @@ export async function manejar(ctx) {
     }),
   ];
   if (r.morosos.length > 15) lineas.push(`… y ${r.morosos.length - 15} más en la planilla.`);
-  await chat.enviar(lineas.join('\n'));
+  await chat.responder(lineas.join('\n'));
 
   await chat.enviarPlanilla(
     `Morosos_${r.comunidad.replace(/\s+/g, '_')}.csv`,

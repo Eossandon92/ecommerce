@@ -16,7 +16,7 @@ export async function manejar(ctx) {
   );
 
   if (!r.trabajadores.length) {
-    await chat.enviar(`${r.comunidad} no tiene trabajadores con contrato vigente. ${LISTO}`);
+    await chat.responder(`${r.comunidad} no tiene trabajadores con contrato vigente. ${LISTO}`);
     await chat.reaccionar('👌');
     return;
   }
@@ -27,6 +27,6 @@ export async function manejar(ctx) {
     '',
     'Para ver vacaciones o liquidación de alguien, pídemelo por su nombre. ' + LISTO,
   ];
-  await chat.enviar(lineas.join('\n'));
+  await chat.responder(lineas.join('\n'));
   await chat.reaccionar('👌');
 }

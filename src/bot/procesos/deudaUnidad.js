@@ -45,6 +45,6 @@ export async function manejar(ctx) {
     : `No tiene pagos registrados en ${r.anio}.`);
   if (propietario) lineas.push(`Propietario: ${propietario}`);
   lineas.push('', LISTO);
-  await chat.enviar(lineas.join('\n'));
+  await chat.responder(lineas.join('\n'));
   await chat.reaccionar('👌');
 }

@@ -23,6 +23,6 @@ export async function manejar(ctx) {
   const enCero = r.fondos.length - conSaldo.length;
   if (enCero) lineas.push('', `${enCero} ${enCero === 1 ? 'fondo' : 'fondos'} en $0 no se muestran.`);
   lineas.push('', LISTO);
-  await chat.enviar(lineas.join('\n'));
+  await chat.responder(lineas.join('\n'));
   await chat.reaccionar('👌');
 }
