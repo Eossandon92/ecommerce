@@ -11,6 +11,7 @@ import * as pagos from './procesos/pagos.js';
 import * as datosUnidad from './procesos/datosUnidad.js';
 import * as fondos from './procesos/fondos.js';
 import * as trabajadores from './procesos/trabajadores.js';
+import * as contactoTrabajador from './procesos/contactoTrabajador.js';
 
 // Un proceso por cada "tipo" que reconoce Claude (ver activepieces/prompt-claude.txt).
 // Para sumar uno nuevo: crear src/bot/procesos/<nombre>.js con manejar() y
@@ -25,6 +26,7 @@ const PROCESOS = {
   datos_unidad: datosUnidad,
   fondos,
   trabajadores,
+  contacto_trabajador: contactoTrabajador,
 };
 
 const PALABRAS_MENU = ['/start', '/menu', 'menu', 'menú', 'ayuda', 'hola', 'inicio'];

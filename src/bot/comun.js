@@ -118,7 +118,7 @@ export const BOTON_MENU = '⬅️ Menú';
 export const MENU_PRINCIPAL = ['💰 Cobranza', '🏦 Fondos del condominio', '👷 Trabajadores'];
 export const SUBMENUS = {
   '💰 Cobranza': ['Ver morosos', 'Deuda de una unidad', 'Gasto común de una unidad', 'Pagos recibidos', 'Datos de una unidad', BOTON_MENU],
-  '👷 Trabajadores': ['Trabajadores vigentes', 'Vacaciones de un trabajador', 'Liquidación de sueldo', BOTON_MENU],
+  '👷 Trabajadores': ['Trabajadores vigentes', 'Vacaciones de un trabajador', 'Liquidación de sueldo', 'Contacto de un trabajador', BOTON_MENU],
 };
 // Botones que inician una consulta directamente (sin pasar por Claude).
 export const BOTONES_ACCION = {
@@ -131,6 +131,7 @@ export const BOTONES_ACCION = {
   'Trabajadores vigentes': 'trabajadores',
   'Vacaciones de un trabajador': 'vacaciones',
   'Liquidación de sueldo': 'liquidacion',
+  'Contacto de un trabajador': 'contacto_trabajador',
 };
 
 export const TEXTO_MENU = [
@@ -149,6 +150,7 @@ export const TEXTO_MENU = [
   '• Trabajadores vigentes',
   '• Vacaciones disponibles y último comprobante',
   '• Liquidación de sueldo en PDF',
+  '• Correo y teléfono de un trabajador',
   '',
   'Escríbeme lo que necesitas, por ejemplo "morosos de Santa Rosa" o "¿cuánto debe el 304 de Santa Rosa?", o toca un botón 👇',
 ].join('\n');

@@ -9,6 +9,7 @@ import {
   normalizarTexto,
 } from './kastor.js';
 import { encontrarUnidad } from './gastoComun.js';
+import { buscarTrabajador } from './vacaciones.js';
 import { tablas, tablaPrincipal, montoCL, esFecha, textoPlano } from './kastorHtml.js';
 
 // Consultas de SOLO LECTURA a Kastor para el bot. Cada una replica el mismo
@@ -194,5 +195,49 @@ export function obtenerTrabajadores({ condominio }) {
       .map((f) => ({ nombre: f[0], rut: f[1], fechaContrato: f[2], tipoContrato: f[3], tipoSueldo: f[4] }));
     trabajadores.sort((a, b) => normalizarTexto(a.nombre).localeCompare(normalizarTexto(b.nombre)));
     return { trabajadores };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Contacto de un trabajador — Remuneraciones → Trabajadores → ficha.
+// POST contratos/todos (lista de vigentes, con el id de cada persona en el
+// botón "Editar Trabajador") y POST contratos/contrato (id_persona), que es lo
+// que carga la pantalla al elegir al trabajador. Solo se leen los campos.
+export function obtenerContactoTrabajador({ condominio, consulta }) {
+  return enCondominio(condominio, async ({ page, url }) => {
+    await page.goto(url('contratos/index'), { waitUntil: 'load' });
+    const lista = await (await page.request.post(url('contratos/todos'), { form: { parametro: '1' } })).text();
+    const trabajadores = [];
+    for (const fila of lista.split(/<tr/i)) {
+      const id = (fila.match(/cargarDiv_parametro\('edit','contenedor','(\d+)'\)/) || [])[1];
+      const nombre = textoPlano((fila.match(/<td[^>]*>([\s\S]*?)<\/td>/i) || [])[1] || '');
+      if (id && nombre) trabajadores.push({ id, nombre });
+    }
+
+    const coincidencias = buscarTrabajador(trabajadores, consulta);
+    if (coincidencias.length !== 1) {
+      const err = new Error(coincidencias.length
+        ? `Hay ${coincidencias.length} personas que calzan con "${consulta}".`
+        : `No encontré a "${consulta}" entre los trabajadores vigentes.`);
+      if (coincidencias.length) err.coincidencias = coincidencias.map((t) => t.nombre);
+      throw err;
+    }
+
+    const trabajador = coincidencias[0];
+    const ficha = await (await page.request.post(url('contratos/contrato'), {
+      form: { id_persona: trabajador.id },
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })).text();
+    const campo = (nombre) => {
+      const input = ficha.match(new RegExp(`<input[^>]*name="data\\[Persona\\]\\[${nombre}\\]"[^>]*>`, 'i'));
+      const valor = input && (input[0].match(/value="([^"]*)"/i) || [])[1];
+      return valor && valor.trim() ? textoPlano(valor) : null;
+    };
+    return {
+      nombre: trabajador.nombre,
+      correo: campo('mail_persona'),
+      telefono: campo('telefono_persona'),
+      celular: campo('celular_persona'),
+    };
   });
 }

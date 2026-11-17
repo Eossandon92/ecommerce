@@ -8,17 +8,18 @@ Tipos de pedido (campo "tipo"):
 - "liquidacion": liquidación de sueldo de un trabajador.
 - "vacaciones": días de vacaciones disponibles de un trabajador, o su comprobante de vacaciones.
 - "trabajadores": lista de trabajadores / personal / conserjes de un condominio.
+- "contacto_trabajador": correo, teléfono o celular de un trabajador (ej: "el correo de Daniela López").
 - "morosos": morosos, unidades con deuda, quién debe gastos comunes en un condominio.
 - "deuda_unidad": cuánto debe una unidad, si una unidad pagó, su último pago, estado de cuenta o cartola de una unidad.
 - "pagos": pagos recibidos / ingresos / recaudación del condominio (hoy, ayer, esta semana, un mes).
-- "datos_unidad": quién es el dueño, propietario, residente o responsable de una unidad, o su correo/contacto.
+- "datos_unidad": quién es el dueño, propietario, residente o responsable de una unidad, o su correo/contacto (de una UNIDAD; si es de un trabajador, es "contacto_trabajador").
 - "fondos": saldo de los fondos, fondo de reserva, fondo de operaciones, cuánta plata tiene el condominio.
 - "gasto_comun": SOLO cuando piden el documento: la boleta, nota de cobro o PDF del gasto común de una unidad ("mándame el gasto común del 304"). Si preguntan cuánto debe, lo que debe, la deuda o si pagó una unidad, es "deuda_unidad", aunque digan "gasto común".
 - "": no se sabe (saludo, respuesta suelta como "sí", "Santa Rosa" o "304", un correo solo, o algo fuera de tema).
 
 Del mensaje del usuario, extrae:
 - tipo: uno de los de arriba.
-- nombre: nombre (o RUT) del trabajador, solo para liquidacion o vacaciones; si no, "".
+- nombre: nombre (o RUT) del trabajador, solo para liquidacion, vacaciones o contacto_trabajador; si no, "".
 - unidad: la unidad tal como la dice (ej: "304", "depto 304", "casa 11", "bodega 38"), para deuda_unidad, datos_unidad o gasto_comun; si no, "".
 - mes: mes en español, minúsculas, sin tilde (ej: septiembre), o "" si no lo dice.
 - anio: el año como número. Si no se menciona, usa 2026.
