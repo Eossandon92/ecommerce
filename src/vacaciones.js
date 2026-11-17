@@ -9,6 +9,7 @@ import {
   entrarAComunidad,
   encontrarComunidad,
   normalizarTexto,
+  coincideNombre,
 } from './kastor.js';
 
 // SOLO LECTURA. Replica los mismos dos POST que hace la pestaña
@@ -62,13 +63,15 @@ async function cargarListaTrabajadores(page, slug) {
   return { mes: null, trabajadores: [] };
 }
 
-function buscarTrabajador(trabajadores, consulta) {
-  const palabras = normalizarTexto(consulta).split(/\s+/).filter(Boolean);
-  if (!palabras.length) return [];
-  return trabajadores.filter((t) => {
+export function buscarTrabajador(trabajadores, consulta) {
+  // Si alguien calza exacto, no se ofrecen los que solo calzan con un error de
+  // tipeo (ej. "Ana" no debe traer también a "Anaí").
+  const exactos = trabajadores.filter((t) => {
     const nombreNorm = normalizarTexto(t.nombre);
-    return palabras.every((p) => nombreNorm.includes(p));
+    const palabras = normalizarTexto(consulta).split(/\s+/).filter(Boolean);
+    return palabras.length > 0 && palabras.every((p) => nombreNorm.includes(p));
   });
+  return exactos.length ? exactos : trabajadores.filter((t) => coincideNombre(consulta, t.nombre));
 }
 
 function parsearDetalle(html) {

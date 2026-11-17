@@ -160,54 +160,78 @@ async function seleccionarMesEnFiltro(page, valorMesStr) {
     },
     { timeout: 10000 },
   );
+  // Un mes que aún no existe en Kastor (ej. el mes en curso antes de procesar
+  // los sueldos) no aparece en el filtro: se avisa en vez de esperar 30 s.
+  const existe = await page.evaluate(
+    (valor) => {
+      const opciones = document.getElementById('select_desde').options;
+      for (let i = 0; i < opciones.length; i++) if (opciones[i].value === valor) return true;
+      return false;
+    },
+    valorMesStr,
+  );
+  if (!existe) return false;
   await selectMes.selectOption(valorMesStr);
   await page.getByRole('button', { name: 'Consultar' }).click();
   await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
+  return true;
+}
+
+// ¿Están dos palabras a lo más a una letra de distancia (una cambiada, sobrante
+// o faltante)? Ej. "danila" ~ "daniela", "lopes" ~ "lopez".
+function casiIgual(a, b) {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  let i = 0;
+  let j = 0;
+  let diferencias = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { i++; j++; continue; }
+    if (++diferencias > 1) return false;
+    if (a.length > b.length) i++;
+    else if (a.length < b.length) j++;
+    else { i++; j++; }
+  }
+  return diferencias + (a.length - i) + (b.length - j) <= 1;
+}
+
+// Un nombre calza con la consulta si cada palabra de la consulta aparece en él
+// (sin importar orden ni nombres del medio), tolerando un error de tipeo en
+// palabras de 4 letras o más ("Danila Lopez" → "Daniela Lopez Montaño").
+export function coincideNombre(consulta, nombre) {
+  const palabras = normalizarTexto(consulta).split(/\s+/).filter(Boolean);
+  const nombreNorm = normalizarTexto(nombre);
+  const palabrasNombre = nombreNorm.split(/\s+/);
+  return palabras.length > 0 && palabras.every((p) =>
+    nombreNorm.includes(p) || (p.length >= 4 && palabrasNombre.some((w) => casiIgual(p, w))));
 }
 
 export async function buscarTrabajadorEnCondominio(page, slug, consulta, valorMesStr) {
   await irAReporteLiquidaciones(page, slug);
-  await seleccionarMesEnFiltro(page, valorMesStr);
+  if (!(await seleccionarMesEnFiltro(page, valorMesStr))) return null;
 
   const consultaNorm = normalizarRut(consulta);
-  const palabrasConsulta = normalizarTexto(consulta).split(/\s+/).filter(Boolean);
-
-  return page.evaluate(
-    ({ consultaNorm, palabrasConsulta }) => {
-      function normalizar(valor) {
-        return (valor || '').toString().toLowerCase().replace(/[.\-\s]/g, '');
-      }
-      function normalizarTexto(valor) {
-        return (valor || '')
-          .toString()
-          .toLowerCase()
-          .normalize('NFD')
-          .replace(/[̀-ͯ]/g, '')
-          .replace(/[^a-z0-9\s]/g, '')
-          .trim();
-      }
-      const filas = Array.from(document.querySelectorAll('table tbody tr'));
-      for (const fila of filas) {
-        const celdas = fila.querySelectorAll('td');
-        if (celdas.length < 3) continue;
-        const nombre = celdas[1]?.querySelector('.kastor-worker-name')?.innerText?.trim() || '';
-        const rut = celdas[2]?.innerText?.trim() || '';
-        const btn = fila.querySelector('.tools-menu-btn');
-        if (!btn) continue;
-        const dataId = btn.getAttribute('data-id');
-        const nombreNorm = normalizarTexto(nombre);
-        // Coincide si vino el RUT exacto, o si todas las palabras de la consulta
-        // aparecen en el nombre (sin importar orden ni nombres del medio).
-        const coincideNombre =
-          palabrasConsulta.length > 0 && palabrasConsulta.every((p) => nombreNorm.includes(p));
-        if (normalizar(rut) === consultaNorm || coincideNombre) {
-          return { dataId, nombre, rut };
-        }
-      }
-      return null;
-    },
-    { consultaNorm, palabrasConsulta },
-  );
+  const filas = await page.evaluate(() => {
+    const resultado = [];
+    for (const fila of document.querySelectorAll('table tbody tr')) {
+      const celdas = fila.querySelectorAll('td');
+      const btn = fila.querySelector('.tools-menu-btn');
+      if (celdas.length < 3 || !btn) continue;
+      resultado.push({
+        dataId: btn.getAttribute('data-id'),
+        nombre: celdas[1]?.querySelector('.kastor-worker-name')?.innerText?.trim() || '',
+        rut: celdas[2]?.innerText?.trim() || '',
+      });
+    }
+    return resultado;
+  });
+  // Coincide si vino el RUT exacto, o si el nombre calza con la consulta
+  // (primero sin errores de tipeo, después tolerándolos).
+  const palabras = normalizarTexto(consulta).split(/\s+/).filter(Boolean);
+  const exacto = (f) => palabras.length > 0 && palabras.every((p) => normalizarTexto(f.nombre).includes(p));
+  return filas.find((f) => normalizarRut(f.rut) === consultaNorm || exacto(f))
+    || filas.find((f) => coincideNombre(consulta, f.nombre))
+    || null;
 }
 
 export async function descargarLiquidacion(page, { dataId, nombre }, { valorDesde, valorHasta, etiquetaArchivo, downloadDir = DOWNLOAD_DIR_DEFAULT }) {
