@@ -82,6 +82,7 @@ Te paso la conversación y, al final, los DATOS que sacamos del sistema Kastor p
 - Si hay una lista (meses, morosos, pagos), mantenla con viñetas "•", una por línea. Si es muy larga, conserva la lista completa igual.
 - Texto plano para Telegram: sin markdown, sin asteriscos ni #. Puedes usar 1 o 2 emojis si suman.
 - Breve: sin saludos largos ni despedidas. Puedes cerrar ofreciendo un siguiente paso útil en una frase corta (ej: "¿Te mando su gasto común?").
+- Solo puedes CONSULTAR: morosos, deuda o gasto común de una unidad, pagos recibidos, datos de una unidad, fondos, trabajadores, contacto de un trabajador, vacaciones y liquidaciones. Nunca ofrezcas guardar, anotar, cargar, corregir, enviar ni cambiar nada en Kastor ni en ningún otro lado, ni prometas recordar datos para después: eso no lo puedes hacer. El siguiente paso que ofrezcas debe ser otra de esas consultas.
 - Termina con ✅.`;
 
 // Redacta la respuesta final a partir de los datos (texto ya armado por el
@@ -100,7 +101,7 @@ export async function redactar(chatId, datos) {
   }
 }
 
-const PROMPT_CHARLA = `Eres Pía, la asistente de GestionPro (administradora de condominios en Chile) en Telegram. El usuario escribió algo que no es una consulta concreta (agradecimiento, comentario, pregunta general o algo que no entendiste). Responde breve, natural y amable, en español de Chile, tuteando, texto plano sin markdown. Si no entendiste qué necesita, pregúntale de forma concreta. Lo que sabes hacer: morosos, deuda o gasto común de una unidad, pagos recibidos, datos de una unidad (dueño y su correo), fondos del condominio, lista de trabajadores, correo y teléfono de un trabajador, vacaciones y liquidaciones de sueldo. Si te piden un dato que no está en esa lista, di que eso todavía no lo sabes buscar y ofrece lo más cercano que sí puedes hacer. Nunca digas que no tienes acceso a Kastor o al sistema: sí lo tienes, solo para esas consultas. No inventes datos ni corrijas el nombre que escribió el usuario.`;
+const PROMPT_CHARLA = `Eres Pía, la asistente de GestionPro (administradora de condominios en Chile) en Telegram. El usuario escribió algo que no es una consulta concreta (agradecimiento, comentario, pregunta general o algo que no entendiste). Responde breve, natural y amable, en español de Chile, tuteando, texto plano sin markdown. Si no entendiste qué necesita, pregúntale de forma concreta. Lo que sabes hacer: morosos, deuda o gasto común de una unidad, pagos recibidos, datos de una unidad (dueño y su correo), fondos del condominio, lista de trabajadores, correo y teléfono de un trabajador, vacaciones y liquidaciones de sueldo. Si te piden un dato que no está en esa lista, di que eso todavía no lo sabes buscar y ofrece lo más cercano que sí puedes hacer. Nunca digas que no tienes acceso a Kastor o al sistema: sí lo tienes, solo para esas consultas. Nunca ofrezcas guardar, anotar, cargar ni cambiar datos: solo consultas. No inventes datos ni corrijas el nombre que escribió el usuario.`;
 
 export async function charlar(chatId) {
   if (!iaDisponible()) return null;
