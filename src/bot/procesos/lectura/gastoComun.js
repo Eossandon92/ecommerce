@@ -1,7 +1,7 @@
 import fs from 'node:fs';
-import { encolar } from '../../cola.js';
-import { obtenerGastoComun } from '../../gastoComun.js';
-import { juntarDatos, nombreOVacio, mesesRecientes, LISTO } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerGastoComun } from '../../../gastoComun.js';
+import { juntarDatos, nombreOVacio, mesesRecientes, LISTO } from '../../comun.js';
 
 // Gasto común (nota de cobro) de una unidad: se manda el PDF por Telegram.
 // El envío por correo al propietario queda para cuando se conecte el Gmail

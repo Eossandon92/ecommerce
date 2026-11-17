@@ -1,6 +1,6 @@
-import { encolar } from '../../cola.js';
-import { obtenerFondos } from '../../consultas.js';
-import { juntarDatos, pesos, LISTO } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerFondos } from '../../../consultas.js';
+import { juntarDatos, pesos, LISTO } from '../../comun.js';
 
 // Saldo de los fondos del condominio (Banco → Fondos de Kastor).
 export async function manejar(ctx) {

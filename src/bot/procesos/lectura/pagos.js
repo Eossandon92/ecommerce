@@ -1,6 +1,6 @@
-import { encolar } from '../../cola.js';
-import { obtenerPagos } from '../../consultas.js';
-import { juntarDatos, pesos, nombreOVacio, LISTO } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerPagos } from '../../../consultas.js';
+import { juntarDatos, pesos, nombreOVacio, LISTO } from '../../comun.js';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 

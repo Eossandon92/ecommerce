@@ -1,7 +1,7 @@
 import fs from 'node:fs';
-import { encolar } from '../../cola.js';
-import { obtenerLiquidacion } from '../../kastor.js';
-import { NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes, mesesRecientes } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerLiquidacion } from '../../../kastor.js';
+import { NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes, mesesRecientes } from '../../comun.js';
 
 // Liquidación de sueldo de un trabajador (PDF desde Kastor).
 export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {

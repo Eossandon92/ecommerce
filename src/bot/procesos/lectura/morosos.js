@@ -1,6 +1,6 @@
-import { encolar } from '../../cola.js';
-import { obtenerMorosos } from '../../consultas.js';
-import { juntarDatos, pesos, nombreOVacio, LISTO } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerMorosos } from '../../../consultas.js';
+import { juntarDatos, pesos, nombreOVacio, LISTO } from '../../comun.js';
 
 // Morosos de un condominio (Reporte de Morosos de Kastor).
 export async function manejar(ctx) {

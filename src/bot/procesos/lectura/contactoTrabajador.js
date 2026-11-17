@@ -1,6 +1,6 @@
-import { encolar } from '../../cola.js';
-import { obtenerContactoTrabajador } from '../../consultas.js';
-import { CANCELAR, NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerContactoTrabajador } from '../../../consultas.js';
+import { CANCELAR, NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes } from '../../comun.js';
 
 // Correo, teléfono y celular de un trabajador (ficha en Kastor, solo lectura).
 export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {

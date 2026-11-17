@@ -1,6 +1,6 @@
-import { encolar } from '../../cola.js';
-import { obtenerCartolaUnidad } from '../../consultas.js';
-import { juntarDatos, pesos, nombreOVacio, LISTO } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerCartolaUnidad } from '../../../consultas.js';
+import { juntarDatos, pesos, nombreOVacio, LISTO } from '../../comun.js';
 
 // Deuda, último pago y movimientos de una unidad (Cartola por Unidad de Kastor).
 export async function manejar(ctx) {

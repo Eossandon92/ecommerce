@@ -1,6 +1,6 @@
-import { encolar } from '../../cola.js';
-import { obtenerDatosUnidad } from '../../consultas.js';
-import { juntarDatos, LISTO } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerDatosUnidad } from '../../../consultas.js';
+import { juntarDatos, LISTO } from '../../comun.js';
 
 // Responsable, propietario y correos de una unidad (Listado de Unidades de Kastor).
 export async function manejar(ctx) {

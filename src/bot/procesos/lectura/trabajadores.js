@@ -1,6 +1,6 @@
-import { encolar } from '../../cola.js';
-import { obtenerTrabajadores } from '../../consultas.js';
-import { juntarDatos, LISTO } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerTrabajadores } from '../../../consultas.js';
+import { juntarDatos, LISTO } from '../../comun.js';
 
 const fechaCL = (iso) => (/^\d{4}-\d{2}-\d{2}$/.test(iso) ? iso.split('-').reverse().join('-') : iso);
 

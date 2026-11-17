@@ -2,31 +2,15 @@ import { crearChat } from './telegram.js';
 import { leerEstado, guardarEstado, borrarEstado } from './estado.js';
 import { iaDisponible, interpretar, redactar, charlar, anotar } from './ia.js';
 import { CANCELAR, esBoton, BOTON_MENU, MENU_PRINCIPAL, SUBMENUS, BOTONES_ACCION, TEXTO_MENU } from './comun.js';
-import * as vacaciones from './procesos/vacaciones.js';
-import * as liquidacion from './procesos/liquidacion.js';
-import * as gastoComun from './procesos/gastoComun.js';
-import * as morosos from './procesos/morosos.js';
-import * as deudaUnidad from './procesos/deudaUnidad.js';
-import * as pagos from './procesos/pagos.js';
-import * as datosUnidad from './procesos/datosUnidad.js';
-import * as fondos from './procesos/fondos.js';
-import * as trabajadores from './procesos/trabajadores.js';
-import * as contactoTrabajador from './procesos/contactoTrabajador.js';
+import { PROCESOS_LECTURA } from './procesos/lectura/index.js';
+import { PROCESOS_ESCRITURA } from './procesos/escritura/index.js';
+import { MODULOS, moduloContratado } from './planes.js';
 
-// Un proceso por cada "tipo" que reconoce Claude (ver activepieces/prompt-claude.txt).
-// Para sumar uno nuevo: crear src/bot/procesos/<nombre>.js con manejar() y
-// agregarlo aquí y al prompt.
+// Un proceso por cada "tipo" que reconoce Claude: los de lectura vienen en
+// todos los planes; los de escritura solo si el cliente tiene su módulo.
 const PROCESOS = {
-  vacaciones,
-  liquidacion,
-  gasto_comun: gastoComun,
-  morosos,
-  deuda_unidad: deudaUnidad,
-  pagos,
-  datos_unidad: datosUnidad,
-  fondos,
-  trabajadores,
-  contacto_trabajador: contactoTrabajador,
+  ...PROCESOS_LECTURA,
+  ...Object.fromEntries(Object.entries(PROCESOS_ESCRITURA).map(([tipo, e]) => [tipo, e.proceso])),
 };
 
 const PALABRAS_MENU = ['/start', '/menu', 'menu', 'menú', 'ayuda', 'hola', 'inicio'];
@@ -128,6 +112,14 @@ async function atender({ chatId, messageId, texto, datos: datosClaude }) {
     if (!proceso) {
       if (datos.respuesta && !previo) await chat.enviar(datos.respuesta);
       await mostrarMenu(chat);
+      return;
+    }
+
+    const escritura = PROCESOS_ESCRITURA[tipo];
+    if (escritura && !moduloContratado(escritura.modulo)) {
+      borrarEstado(chatId);
+      await chat.enviar(`Eso es parte del módulo ${MODULOS[escritura.modulo]}, que no está incluido en tu plan. Si te interesa, pídeselo a Gestora.`, MENU_PRINCIPAL);
+      await chat.reaccionar(null);
       return;
     }
 

@@ -1,7 +1,7 @@
 import fs from 'node:fs';
-import { encolar } from '../../cola.js';
-import { obtenerVacaciones } from '../../vacaciones.js';
-import { CANCELAR, NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes, numeroCL } from '../comun.js';
+import { encolar } from '../../../cola.js';
+import { obtenerVacaciones } from '../../../vacaciones.js';
+import { CANCELAR, NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes, numeroCL } from '../../comun.js';
 
 // Días de vacaciones disponibles de un trabajador (solo lectura en Kastor).
 export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
