@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { encolar } from '../../cola.js';
 import { obtenerLiquidacion } from '../../kastor.js';
-import { NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes } from '../comun.js';
+import { NO_SE, LISTO, esBoton, condominioDelMensaje, preguntarFaltantes, mesesRecientes } from '../comun.js';
 
 // Liquidación de sueldo de un trabajador (PDF desde Kastor).
 export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
@@ -15,15 +15,14 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
     condominio: condominioDelMensaje({ texto, datos, previo: p, preguntando: p.condominioPreguntado && !!(p.nombre || datos.nombre) }),
   };
   const condominioYaPreguntado = !!p.condominioPreguntado || esBoton(texto, NO_SE);
+  // Sin mes ("la última liquidación"): la más reciente, sin preguntar.
   const faltaNombre = !combinado.nombre;
-  const faltaMes = !combinado.mes;
   const faltaCondominio = !combinado.condominio && !condominioYaPreguntado;
 
-  if (faltaNombre || faltaMes || faltaCondominio) {
+  if (faltaNombre || faltaCondominio) {
     guardar({ ...combinado, condominioPreguntado: faltaCondominio || condominioYaPreguntado });
     const partes = [];
     if (faltaNombre) partes.push('el nombre (o RUT) del trabajador');
-    if (faltaMes) partes.push('de qué mes');
     if (faltaCondominio) partes.push('en qué condominio trabaja');
     await preguntarFaltantes(chat, partes, faltaCondominio);
     await chat.reaccionar(null);
@@ -31,15 +30,16 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
   }
 
   borrar();
-  await chat.enviar(`Claro, te envío la liquidación de sueldo de ${combinado.nombre} de ${combinado.mes} ${combinado.anio} 👍`);
+  await chat.enviar(combinado.mes
+    ? `Claro, te envío la liquidación de sueldo de ${combinado.nombre} de ${combinado.mes} ${combinado.anio} 👍`
+    : `Claro, te busco la última liquidación de sueldo de ${combinado.nombre} 👍`);
 
   let resultado;
   try {
     resultado = await chat.conEspera('Buscando la liquidación en Kastor, puede tardar unos minutos', () =>
       encolar(() => obtenerLiquidacion({
         consulta: combinado.nombre,
-        mes: combinado.mes,
-        anio: combinado.anio,
+        periodos: combinado.mes ? [{ mes: combinado.mes, anio: combinado.anio }] : mesesRecientes(),
         condominio: combinado.condominio,
         headless: true,
       })),
@@ -51,8 +51,8 @@ export async function manejar({ chat, datos, previo, texto, guardar, borrar }) {
   }
 
   try {
-    const nombreArchivo = `Liquidacion_${resultado.nombre}_${combinado.mes}_${combinado.anio}.pdf`.replace(/\s+/g, '_');
-    await chat.enviarDocumento(resultado.archivo, nombreArchivo, `Liquidación de ${resultado.nombre} · ${combinado.mes} ${combinado.anio} ${LISTO}`);
+    const nombreArchivo = `Liquidacion_${resultado.nombre}_${resultado.mes}_${resultado.anio}.pdf`.replace(/\s+/g, '_');
+    await chat.enviarDocumento(resultado.archivo, nombreArchivo, `Liquidación de ${resultado.nombre} · ${resultado.mes} ${resultado.anio} ${LISTO}`);
     await chat.reaccionar('👌');
   } finally {
     fs.unlink(resultado.archivo, () => {});

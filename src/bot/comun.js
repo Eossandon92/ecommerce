@@ -62,6 +62,18 @@ export const numeroCL = (v) =>
 // normal (no animado: los emojis animados en el texto son de Premium).
 export const LISTO = '✅';
 
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+// Mes actual en Chile y el anterior: si no dicen el mes, se busca lo más
+// reciente (lo del mes en curso, o lo del anterior si aún no sale).
+export function mesesRecientes() {
+  const [anio, mes] = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }).split('-').map(Number);
+  const actual = { mes: MESES[mes - 1], anio };
+  const anterior = mes === 1 ? { mes: 'diciembre', anio: anio - 1 } : { mes: MESES[mes - 2], anio };
+  return [actual, anterior];
+}
+
 // $ 1.358.906 (negativos con signo).
 export const pesos = (v) =>
   v === null || v === undefined ? '-' : `${v < 0 ? '-' : ''}$${Math.abs(v).toLocaleString('es-CL')}`;

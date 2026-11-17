@@ -237,9 +237,12 @@ export async function descargarLiquidacion(page, { dataId, nombre }, { valorDesd
   return destino;
 }
 
-export async function obtenerLiquidacion({ consulta, mes, anio, condominio, headless = true, downloadDir }) {
-  const etiqueta = etiquetaMes(mes, anio);
-  const valor = valorMes(mes, anio);
+// `periodos` ([{mes, anio}, ...], en orden de preferencia) reemplaza a mes/anio
+// cuando no se sabe el mes: en cada condominio se prueba el primero y, si el
+// trabajador no tiene liquidación ese mes, el siguiente (ej. "la última").
+export async function obtenerLiquidacion({ consulta, mes, anio, periodos, condominio, headless = true, downloadDir }) {
+  const opciones = (periodos || [{ mes, anio }]).map((p) => ({ ...p, valor: valorMes(p.mes, p.anio) }));
+  const etiqueta = opciones.map((p) => etiquetaMes(p.mes, p.anio)).join(' ni ');
   const browser = await chromium.launch({ headless });
   // Viewport alto a propósito: el menú de "Descargar" de una fila se despliega
   // relativo a su posición en la tabla, y con el viewport chico por defecto
@@ -269,20 +272,24 @@ export async function obtenerLiquidacion({ consulta, mes, anio, condominio, head
     for (const comunidad of ordenBusqueda) {
       console.error(`Revisando "${comunidad.nombre}"...`);
       let encontrado;
+      let periodo;
       try {
-        encontrado = await buscarTrabajadorEnCondominio(page, comunidad.slug, consulta, valor);
+        for (periodo of opciones) {
+          encontrado = await buscarTrabajadorEnCondominio(page, comunidad.slug, consulta, periodo.valor);
+          if (encontrado) break;
+        }
       } catch (err) {
         console.warn(`Aviso: no se pudo revisar "${comunidad.nombre}" (${comunidad.slug}): ${err.message.split('\n')[0]}`);
         continue;
       }
       if (encontrado) {
         const archivo = await descargarLiquidacion(page, encontrado, {
-          valorDesde: valor,
-          valorHasta: valor,
-          etiquetaArchivo: etiqueta,
+          valorDesde: periodo.valor,
+          valorHasta: periodo.valor,
+          etiquetaArchivo: etiquetaMes(periodo.mes, periodo.anio),
           downloadDir,
         });
-        return { ...encontrado, comunidad: comunidad.nombre, slug: comunidad.slug, archivo };
+        return { ...encontrado, comunidad: comunidad.nombre, slug: comunidad.slug, archivo, mes: periodo.mes, anio: periodo.anio };
       }
     }
     throw new Error(

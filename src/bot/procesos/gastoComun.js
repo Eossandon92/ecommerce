@@ -1,19 +1,7 @@
 import fs from 'node:fs';
 import { encolar } from '../../cola.js';
 import { obtenerGastoComun } from '../../gastoComun.js';
-import { juntarDatos, nombreOVacio, LISTO } from '../comun.js';
-
-const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-
-// Mes actual en Chile y el anterior: si no dicen el mes, se busca la nota de
-// cobro más reciente (la del mes en curso, o la del anterior si aún no sale).
-function mesesRecientes() {
-  const [anio, mes] = new Date().toLocaleDateString('en-CA', { timeZone: 'America/Santiago' }).split('-').map(Number);
-  const actual = { mes: MESES[mes - 1], anio };
-  const anterior = mes === 1 ? { mes: 'diciembre', anio: anio - 1 } : { mes: MESES[mes - 2], anio };
-  return [actual, anterior];
-}
+import { juntarDatos, nombreOVacio, mesesRecientes, LISTO } from '../comun.js';
 
 // Gasto común (nota de cobro) de una unidad: se manda el PDF por Telegram.
 // El envío por correo al propietario queda para cuando se conecte el Gmail
