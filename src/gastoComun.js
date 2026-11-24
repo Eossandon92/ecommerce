@@ -71,7 +71,9 @@ function textoConLetras(valor) {
 
 async function leerUnidades(page, slug) {
   await page.goto(`${BASE_URL}/${slug}/pagounidad/cartola_unidad`, { waitUntil: 'load' });
-  await page.waitForSelector('#unidad', { timeout: 15000 });
+  // state "attached": en algunas comunidades (ej. Pedro de Valdivia) Kastor
+  // deja el <select> oculto; solo leemos sus opciones, no necesita verse.
+  await page.waitForSelector('#unidad', { state: 'attached', timeout: 15000 });
   return page.evaluate(() => {
     const sel = document.getElementById('unidad');
     const out = [];
